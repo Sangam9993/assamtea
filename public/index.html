@@ -855,10 +855,10 @@
     // Extract frames once metadata loaded
     async function extractFrames() {
       const duration = video.duration;
-      // Target ~24fps equivalent but cap at 300 frames for memory
-      const fps = 24;
+      // Target ~12fps equivalent, capped at 120 frames for fast load + low memory
+      const fps = 12;
       const rawCount = Math.floor(duration * fps);
-      totalFrames = Math.min(rawCount, 300);
+      totalFrames = Math.min(rawCount, 120);
       frames = new Array(totalFrames);
 
       for (let i = 0; i < totalFrames; i++) {
@@ -873,19 +873,29 @@
       onFramesReady();
     }
 
-    function onFramesReady() {
-      // Draw first frame
+    // SAFETY NET: Force-hide loading screen after 8s no matter what
+    let loadingDone = false;
+    let safetyTimer = null;
+    function hideLoadingScreen(reason) {
+      if (loadingDone) return;
+      loadingDone = true;
+      if (safetyTimer) clearTimeout(safetyTimer);
+      console.log('Hiding loading screen:', reason);
+      // Draw first frame if we have it
       if (frames[0]) ctx.drawImage(frames[0], 0, 0, canvas.width, canvas.height);
-
       // Fade out loading screen
       loadingScreen.classList.add('fade-out');
       setTimeout(() => { loadingScreen.style.display = 'none'; }, 850);
-
       // Init GSAP animations
       initAnimations();
+      // Start render loop if frames are ready
+      if (isReady) startRenderLoop();
+    }
+    safetyTimer = setTimeout(() => hideLoadingScreen('safety timeout (8s)'), 8000);
 
-      // Start render loop
-      startRenderLoop();
+    function onFramesReady() {
+      isReady = true;
+      hideLoadingScreen('frames ready');
     }
 
     function startRenderLoop() {
@@ -918,7 +928,16 @@
 
     // Start loading when metadata available
     video.addEventListener('loadedmetadata', () => {
-      extractFrames().catch(console.error);
+      extractFrames().catch((err) => {
+        console.error('Frame extraction failed:', err);
+        hideLoadingScreen('extraction error');
+      });
+    });
+
+    // If video fails to load entirely, still show the page
+    video.addEventListener('error', () => {
+      console.warn('Video failed to load — continuing without scroll-scrub');
+      hideLoadingScreen('video error');
     });
 
     // Trigger load
