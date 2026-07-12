@@ -855,10 +855,10 @@
     // Extract frames once metadata loaded
     async function extractFrames() {
       const duration = video.duration;
-      // Target ~12fps equivalent, capped at 120 frames for fast load + low memory
-      const fps = 12;
+      // Target ~8fps, capped at 60 frames for fast extraction + low memory
+      const fps = 8;
       const rawCount = Math.floor(duration * fps);
-      totalFrames = Math.min(rawCount, 120);
+      totalFrames = Math.min(rawCount, 60);
       frames = new Array(totalFrames);
 
       for (let i = 0; i < totalFrames; i++) {
@@ -873,7 +873,8 @@
       onFramesReady();
     }
 
-    // SAFETY NET: Force-hide loading screen after 8s no matter what
+    // SAFETY NET: Force-hide loading screen after 6s no matter what
+    // (separate from frame extraction — page must always be usable)
     let loadingDone = false;
     let safetyTimer = null;
     function hideLoadingScreen(reason) {
@@ -881,20 +882,22 @@
       loadingDone = true;
       if (safetyTimer) clearTimeout(safetyTimer);
       console.log('Hiding loading screen:', reason);
-      // Draw first frame if we have it
+      // Draw first frame if we already have it
       if (frames[0]) ctx.drawImage(frames[0], 0, 0, canvas.width, canvas.height);
       // Fade out loading screen
       loadingScreen.classList.add('fade-out');
       setTimeout(() => { loadingScreen.style.display = 'none'; }, 850);
       // Init GSAP animations
       initAnimations();
-      // Start render loop if frames are ready
-      if (isReady) startRenderLoop();
     }
-    safetyTimer = setTimeout(() => hideLoadingScreen('safety timeout (8s)'), 8000);
+    safetyTimer = setTimeout(() => hideLoadingScreen('safety timeout (6s)'), 6000);
 
     function onFramesReady() {
       isReady = true;
+      console.log('Frames ready:', totalFrames, 'frames extracted');
+      // Always start the render loop when frames are ready
+      // (even if loading screen was already hidden by safety timeout)
+      startRenderLoop();
       hideLoadingScreen('frames ready');
     }
 
