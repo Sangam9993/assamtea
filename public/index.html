@@ -201,11 +201,11 @@
       height: 100dvh; /* mobile-safe dynamic viewport */
       overflow: hidden;
     }
-    /* Canvas hidden — using native video element directly */
+    /* Canvas hidden — using native video element */
     #video-canvas {
       display: none;
     }
-    /* Full-screen HD background video (autoplay muted) */
+    /* Full-screen HD background video (paused until user taps) */
     #source-video {
       position: absolute;
       inset: 0;
@@ -214,6 +214,93 @@
       object-fit: cover;
       z-index: 1;
       background: #000;
+      cursor: pointer;
+    }
+
+    /* Tap overlay — premium play button design */
+    #play-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 25;
+      cursor: pointer;
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+      transition: opacity 0.6s ease, background 0.6s ease;
+    }
+    #play-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+      background: transparent;
+    }
+    /* Premium glass play button with gold ring */
+    #play-button {
+      width: clamp(90px, 16vw, 130px);
+      height: clamp(90px, 16vw, 130px);
+      border-radius: 50%;
+      background: rgba(245, 158, 11, 0.18);
+      border: 1px solid rgba(245, 158, 11, 0.5);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow:
+        0 0 60px rgba(245, 158, 11, 0.3),
+        inset 0 0 30px rgba(245, 158, 11, 0.1);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  box-shadow 0.3s ease,
+                  background 0.3s ease;
+      position: relative;
+    }
+    /* Pulsing gold ring around button */
+    #play-button::before {
+      content: '';
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      animation: ring-pulse 2.5s ease-in-out infinite;
+    }
+    @keyframes ring-pulse {
+      0%, 100% { transform: scale(1); opacity: 0.4; }
+      50% { transform: scale(1.15); opacity: 0; }
+    }
+    #play-overlay:hover #play-button,
+    #play-overlay:active #play-button {
+      transform: scale(1.08);
+      background: rgba(245, 158, 11, 0.35);
+      box-shadow:
+        0 0 80px rgba(245, 158, 11, 0.5),
+        inset 0 0 40px rgba(245, 158, 11, 0.2);
+    }
+    /* White play triangle */
+    #play-button::after {
+      content: '';
+      width: 0;
+      height: 0;
+      border-left: clamp(22px, 4vw, 32px) solid #fff;
+      border-top: clamp(14px, 2.5vw, 20px) solid transparent;
+      border-bottom: clamp(14px, 2.5vw, 20px) solid transparent;
+      margin-left: clamp(6px, 1.2vw, 10px);
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+    }
+    #play-label {
+      position: absolute;
+      bottom: 22%;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255, 255, 255, 0.85);
+      font-family: 'Inter', sans-serif;
+      font-size: clamp(10px, 2vw, 12px);
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      pointer-events: none;
+      text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
+      white-space: nowrap;
     }
 
     /* Subtle gradient overlay on video for premium look */
@@ -223,21 +310,21 @@
       z-index: 2;
       background: linear-gradient(
         180deg,
-        rgba(0, 0, 0, 0.35) 0%,
+        rgba(0, 0, 0, 0.4) 0%,
         rgba(0, 0, 0, 0.1) 40%,
         rgba(0, 0, 0, 0.25) 70%,
-        rgba(0, 0, 0, 0.6) 100%
+        rgba(0, 0, 0, 0.65) 100%
       );
       pointer-events: none;
     }
 
-    /* Scroll-down hint at bottom (auto-shows after video starts) */
+    /* Scroll-down hint at bottom (shows after user starts) */
     #scroll-hint {
       position: absolute;
       bottom: 4%;
       left: 50%;
       transform: translateX(-50%);
-      color: rgba(255, 255, 255, 0.75);
+      color: rgba(255, 255, 255, 0.8);
       font-family: 'Inter', sans-serif;
       font-size: clamp(9px, 2vw, 11px);
       letter-spacing: 0.4em;
@@ -249,13 +336,13 @@
       white-space: nowrap;
       text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
     }
-    #scroll-hint.visible { opacity: 0.85; }
+    #scroll-hint.visible { opacity: 0.9; }
     #scroll-hint::after {
       content: '';
       display: block;
       width: 1px;
       height: 28px;
-      background: linear-gradient(180deg, rgba(245, 158, 11, 0.6), transparent);
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.7), transparent);
       margin: 10px auto 0;
       animation: scroll-pulse 1.8s ease-in-out infinite;
     }
@@ -775,7 +862,7 @@
   <!-- HERO VIDEO SECTION -->
   <section id="hero">
     <div id="hero-sticky">
-      <video id="source-video" autoplay muted loop playsinline preload="auto" crossorigin="anonymous">
+      <video id="source-video" muted loop playsinline preload="auto" crossorigin="anonymous" poster="dusk-product.png">
         <source src="tea-story-final.mp4" type="video/mp4" />
       </video>
       <canvas id="video-canvas"></canvas>
@@ -783,7 +870,13 @@
       <!-- Premium gradient overlay -->
       <div id="video-overlay"></div>
 
-      <!-- Scroll hint (shows after video starts) -->
+      <!-- Tap to play overlay -->
+      <div id="play-overlay" role="button" tabindex="0" aria-label="Tap to play video">
+        <div id="play-button"></div>
+        <div id="play-label">Tap to play</div>
+      </div>
+
+      <!-- Scroll hint (shows after user starts) -->
       <div id="scroll-hint">Scroll to explore</div>
 
       <!-- Overlay 1: ASSAM TEA title -->
@@ -927,10 +1020,10 @@
     window.addEventListener('scroll', updateScrollProgress, { passive: true });
 
     /* ────────────────────────────────────────
-       VIP VIDEO LOADER + AUTOPLAY
-       - Tracks real download progress (%)
-       - Hides loading screen when video can play
-       - Autoplay (muted) starts automatically
+       VIP VIDEO — TAP TO START + SCROLL SCRUB
+       - Loading screen tracks video download
+       - After load: tap play button to begin
+       - After tap: video frames scrub as user scrolls
     ──────────────────────────────────────── */
     const video         = document.getElementById('source-video');
     const loadingScreen = document.getElementById('loading-screen');
@@ -938,11 +1031,14 @@
     const loadingPct    = document.getElementById('loading-percent');
     const loadingLabel  = document.getElementById('loading-label');
     const scrollHint    = document.getElementById('scroll-hint');
+    const playOverlay   = document.getElementById('play-overlay');
 
     let loadingDone     = false;
     let safetyTimer     = null;
     let progressTimer   = null;
-    const MIN_LOAD_TIME = 2500; // minimum 2.5s to show premium loading design
+    let userStarted     = false;
+    let isReady         = false;
+    const MIN_LOAD_TIME = 2500;
     const loadStartTime = Date.now();
 
     /* --- Smoothly update progress bar + percent --- */
@@ -960,20 +1056,12 @@
       if (progressTimer) clearInterval(progressTimer);
       console.log('Hiding loading screen:', reason);
       setProgress(100);
-      // Ensure minimum display time for premium loading experience
       const elapsed = Date.now() - loadStartTime;
       const wait = Math.max(0, MIN_LOAD_TIME - elapsed);
       setTimeout(() => {
         loadingScreen.classList.add('fade-out');
         setTimeout(() => { loadingScreen.style.display = 'none'; }, 1000);
         initAnimations();
-        // Show scroll hint after video starts
-        setTimeout(() => {
-          if (scrollHint) {
-            scrollHint.classList.add('visible');
-            setTimeout(() => scrollHint.classList.remove('visible'), 4000);
-          }
-        }, 1500);
       }, wait + 400);
     }
 
@@ -989,8 +1077,6 @@
           realPct = (buffered / duration) * 100;
         }
       } catch (e) { /* ignore */ }
-      // Smoothly animate display towards real progress (never goes backwards)
-      // Add a small steady creep so bar always moves (feels alive)
       const creep = displayPct < 90 ? 0.5 : 0.1;
       const target = Math.max(realPct, Math.min(displayPct + creep, 95));
       displayPct = target;
@@ -998,18 +1084,11 @@
     }
     progressTimer = setInterval(trackProgress, 100);
 
-    /* --- Also update on standard progress events --- */
-    video.addEventListener('progress', trackProgress);
-
-    /* --- Video fully buffered → hide loading + autoplay --- */
+    /* --- Video fully buffered → hide loading, show play button --- */
     video.addEventListener('canplaythrough', () => {
-      console.log('Video fully buffered — starting autoplay');
+      console.log('Video fully buffered — ready for tap');
+      isReady = true;
       hideLoadingScreen('video fully loaded');
-      video.play().catch(err => console.warn('Autoplay blocked:', err.message));
-    });
-
-    video.addEventListener('playing', () => {
-      console.log('Video is playing');
     });
 
     video.addEventListener('error', () => {
@@ -1017,16 +1096,52 @@
       hideLoadingScreen('video error');
     });
 
-    /* --- Metadata loaded: we can show duration estimate --- */
     video.addEventListener('loadedmetadata', () => {
       console.log('Video metadata loaded (HD:', video.videoWidth + 'x' + video.videoHeight + ')');
       if (loadingLabel) loadingLabel.textContent = 'Loading HD video';
     });
 
-    /* --- Safety net: force-hide loading after 15s --- */
-    safetyTimer = setTimeout(() => hideLoadingScreen('safety timeout (15s)'), 15000);
+    /* --- User taps play → start scroll-scrub --- */
+    function onUserStart() {
+      if (userStarted) return;
+      userStarted = true;
+      playOverlay.classList.add('hidden');
+      console.log('User started — scroll to scrub video');
+      // Show scroll hint
+      if (scrollHint) {
+        scrollHint.classList.add('visible');
+        setTimeout(() => scrollHint.classList.remove('visible'), 4000);
+      }
+      // Jump to current scroll position
+      updateScrollFrame();
+      // Start playing (so audio/video actually runs as fallback)
+      video.play().then(() => {
+        console.log('Video playing (will pause on scroll)');
+      }).catch(err => console.warn('Play failed:', err.message));
+    }
+    playOverlay.addEventListener('click', onUserStart);
+    playOverlay.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onUserStart(); }
+    });
 
-    /* --- Start loading video --- */
+    /* --- Map scroll position to video currentTime (scroll-scrub) --- */
+    function updateScrollFrame() {
+      if (!userStarted || !isReady) return;
+      const heroEl = document.getElementById('hero');
+      if (!heroEl) return;
+      const heroTop = heroEl.offsetTop;
+      const heroHeight = Math.max(1, heroEl.offsetHeight - window.innerHeight);
+      const scrollY = window.scrollY - heroTop;
+      const progress = Math.max(0, Math.min(1, scrollY / heroHeight));
+      // Set video time based on scroll
+      if (video.duration) {
+        video.currentTime = progress * video.duration;
+      }
+    }
+    window.addEventListener('scroll', updateScrollFrame, { passive: true });
+
+    /* --- Safety net --- */
+    safetyTimer = setTimeout(() => hideLoadingScreen('safety timeout (15s)'), 15000);
     video.load();
 
     /* ────────────────────────────────────────
