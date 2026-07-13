@@ -942,6 +942,8 @@
     let loadingDone     = false;
     let safetyTimer     = null;
     let progressTimer   = null;
+    const MIN_LOAD_TIME = 2500; // minimum 2.5s to show premium loading design
+    const loadStartTime = Date.now();
 
     /* --- Smoothly update progress bar + percent --- */
     function setProgress(pct) {
@@ -958,7 +960,9 @@
       if (progressTimer) clearInterval(progressTimer);
       console.log('Hiding loading screen:', reason);
       setProgress(100);
-      // Brief pause at 100% for elegant reveal
+      // Ensure minimum display time for premium loading experience
+      const elapsed = Date.now() - loadStartTime;
+      const wait = Math.max(0, MIN_LOAD_TIME - elapsed);
       setTimeout(() => {
         loadingScreen.classList.add('fade-out');
         setTimeout(() => { loadingScreen.style.display = 'none'; }, 1000);
@@ -970,22 +974,29 @@
             setTimeout(() => scrollHint.classList.remove('visible'), 4000);
           }
         }, 1500);
-      }, 400);
+      }, wait + 400);
     }
 
     /* --- Track real download progress via buffered ranges --- */
+    let displayPct = 0;
     function trackProgress() {
       if (loadingDone) return;
+      let realPct = 0;
       try {
         if (video.buffered && video.buffered.length > 0) {
           const buffered = video.buffered.end(video.buffered.length - 1);
           const duration = video.duration || 28.8;
-          const pct = (buffered / duration) * 100;
-          setProgress(pct);
+          realPct = (buffered / duration) * 100;
         }
       } catch (e) { /* ignore */ }
+      // Smoothly animate display towards real progress (never goes backwards)
+      // Add a small steady creep so bar always moves (feels alive)
+      const creep = displayPct < 90 ? 0.5 : 0.1;
+      const target = Math.max(realPct, Math.min(displayPct + creep, 95));
+      displayPct = target;
+      setProgress(displayPct);
     }
-    progressTimer = setInterval(trackProgress, 200);
+    progressTimer = setInterval(trackProgress, 100);
 
     /* --- Also update on standard progress events --- */
     video.addEventListener('progress', trackProgress);
