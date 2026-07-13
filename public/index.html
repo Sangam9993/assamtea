@@ -139,17 +139,18 @@
       height: 100vh;
       overflow: hidden;
     }
+    /* Canvas hidden — using native video now for reliability */
     #video-canvas {
+      display: none;
+    }
+    /* Visible autoplay background video */
+    #source-video {
       position: absolute;
       inset: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
-    }
-    /* Hidden video for frame extraction */
-    #source-video {
-      display: none;
-      position: absolute;
+      z-index: 1;
     }
 
     /* ── TEXT OVERLAYS ── */
@@ -662,7 +663,7 @@
   <section id="hero">
     <div id="hero-sticky">
       <canvas id="video-canvas"></canvas>
-      <video id="source-video" muted playsinline preload="auto" crossorigin="anonymous">
+      <video id="source-video" autoplay muted loop playsinline preload="auto" crossorigin="anonymous">
         <source src="tea-story-final.mp4" type="video/mp4" />
       </video>
 
@@ -807,139 +808,44 @@
     window.addEventListener('scroll', updateScrollProgress, { passive: true });
 
     /* ────────────────────────────────────────
-       VIDEO FRAME EXTRACTION & CANVAS SCRUB
+       VIDEO AUTOPLAY (simple, reliable)
     ──────────────────────────────────────── */
-    const video    = document.getElementById('source-video');
-    const canvas   = document.getElementById('video-canvas');
-    const ctx      = canvas.getContext('2d');
+    const video        = document.getElementById('source-video');
     const loadingScreen = document.getElementById('loading-screen');
-    const barFill  = document.getElementById('loading-bar-fill');
 
-    let frames       = [];
-    let totalFrames  = 0;
-    let framesLoaded = 0;
-    let rafId        = null;
-    let currentFrame = 0;
-    let targetFrame  = 0;
-    let isReady      = false;
-
-    // Size canvas to viewport
-    function resizeCanvas() {
-      canvas.width  = window.innerWidth;
-      canvas.height = window.innerHeight;
-      if (isReady && frames[currentFrame]) {
-        ctx.drawImage(frames[currentFrame], 0, 0, canvas.width, canvas.height);
-      }
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    // Seek video to time, capture frame to offscreen canvas
-    function captureFrame(time) {
-      return new Promise((resolve) => {
-        const oc = document.createElement('canvas');
-        oc.width  = video.videoWidth  || 1920;
-        oc.height = video.videoHeight || 1080;
-        const octx = oc.getContext('2d');
-
-        const onSeeked = () => {
-          video.removeEventListener('seeked', onSeeked);
-          octx.drawImage(video, 0, 0, oc.width, oc.height);
-          resolve(oc);
-        };
-        video.addEventListener('seeked', onSeeked);
-        video.currentTime = time;
-      });
-    }
-
-    // Extract frames once metadata loaded
-    async function extractFrames() {
-      const duration = video.duration;
-      // Target ~8fps, capped at 60 frames for fast extraction + low memory
-      const fps = 8;
-      const rawCount = Math.floor(duration * fps);
-      totalFrames = Math.min(rawCount, 60);
-      frames = new Array(totalFrames);
-
-      for (let i = 0; i < totalFrames; i++) {
-        const t = (i / (totalFrames - 1)) * duration;
-        frames[i] = await captureFrame(t);
-        framesLoaded++;
-        const pct = Math.round((framesLoaded / totalFrames) * 100);
-        barFill.style.width = pct + '%';
-      }
-
-      isReady = true;
-      onFramesReady();
-    }
-
-    // SAFETY NET: Force-hide loading screen after 6s no matter what
-    // (separate from frame extraction — page must always be usable)
     let loadingDone = false;
     let safetyTimer = null;
+
     function hideLoadingScreen(reason) {
       if (loadingDone) return;
       loadingDone = true;
       if (safetyTimer) clearTimeout(safetyTimer);
       console.log('Hiding loading screen:', reason);
-      // Draw first frame if we already have it
-      if (frames[0]) ctx.drawImage(frames[0], 0, 0, canvas.width, canvas.height);
       // Fade out loading screen
       loadingScreen.classList.add('fade-out');
       setTimeout(() => { loadingScreen.style.display = 'none'; }, 850);
       // Init GSAP animations
       initAnimations();
     }
-    safetyTimer = setTimeout(() => hideLoadingScreen('safety timeout (6s)'), 6000);
 
-    function onFramesReady() {
-      isReady = true;
-      console.log('Frames ready:', totalFrames, 'frames extracted');
-      // Always start the render loop when frames are ready
-      // (even if loading screen was already hidden by safety timeout)
-      startRenderLoop();
-      hideLoadingScreen('frames ready');
-    }
+    // Safety: hide loading screen after 4s no matter what
+    safetyTimer = setTimeout(() => hideLoadingScreen('safety timeout (4s)'), 4000);
 
-    function startRenderLoop() {
-      function loop() {
-        rafId = requestAnimationFrame(loop);
-        if (!isReady) return;
-        // Smooth towards target
-        if (currentFrame !== targetFrame) {
-          currentFrame += (targetFrame - currentFrame) * 0.25;
-          currentFrame = Math.round(currentFrame);
-        }
-        const idx = Math.max(0, Math.min(totalFrames - 1, currentFrame));
-        if (frames[idx]) {
-          ctx.drawImage(frames[idx], 0, 0, canvas.width, canvas.height);
-        }
-      }
-      loop();
-    }
-
-    // Map scroll progress (0-1) inside hero to frame index
-    function updateFrame() {
-      const heroEl = document.getElementById('hero');
-      const heroTop = heroEl.offsetTop;
-      const heroHeight = heroEl.offsetHeight - window.innerHeight;
-      const scrollY = window.scrollY - heroTop;
-      const progress = Math.max(0, Math.min(1, scrollY / heroHeight));
-      targetFrame = Math.round(progress * (totalFrames - 1));
-    }
-    window.addEventListener('scroll', updateFrame, { passive: true });
-
-    // Start loading when metadata available
-    video.addEventListener('loadedmetadata', () => {
-      extractFrames().catch((err) => {
-        console.error('Frame extraction failed:', err);
-        hideLoadingScreen('extraction error');
-      });
+    // Hide loading screen as soon as video can play
+    video.addEventListener('canplay', () => {
+      console.log('Video can play — starting autoplay');
+      hideLoadingScreen('video can play');
+      // Try to play (in case autoplay was blocked)
+      video.play().catch(err => console.warn('Autoplay blocked:', err.message));
     });
 
-    // If video fails to load entirely, still show the page
+    video.addEventListener('playing', () => {
+      console.log('Video is playing');
+      hideLoadingScreen('video playing');
+    });
+
     video.addEventListener('error', () => {
-      console.warn('Video failed to load — continuing without scroll-scrub');
+      console.warn('Video failed to load — continuing without video');
       hideLoadingScreen('video error');
     });
 
