@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ASSAM TEA — Steeped in Silence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --amber: rgba(245,158,11,1);
+      --amber-faint: rgba(245,158,11,0.15);
+      --amber-mid: rgba(245,158,11,0.6);
+      --amber-strong: rgba(245,158,11,0.8);
+      --amber-glow: rgba(245,158,11,0.9);
+      --white: #ffffff;
+      --black: #030303;
+    }
+
+    html { scroll-behavior: auto; }
+
+    body {
+      background: var(--black);
+      color: var(--white);
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* ── VIP LOADING SCREEN ── */
+    #loading-screen {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, #0a0703 0%, #000000 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      gap: 0;
+      transition: opacity 1s ease;
+    }
+    #loading-screen.fade-out { opacity: 0; pointer-events: none; }
+
+    /* Decorative top border line */
+    #loading-screen::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: min(420px, 80vw);
+      height: min(420px, 80vw);
+      border: 1px solid rgba(245, 158, 11, 0.08);
+      border-radius: 50%;
+      animation: pulse-ring 4s ease-in-out infinite;
+    }
+    @keyframes pulse-ring {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.4; }
+      50% { transform: translate(-50%, -50%) scale(1.08); opacity: 0.8; }
+    }
+
+    #loading-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(38px, 8vw, 64px);
+      font-weight: 400;
+      color: var(--amber);
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      text-shadow: 0 0 40px rgba(245, 158, 11, 0.4);
+      margin-bottom: 8px;
+      z-index: 2;
+    }
+
+    #loading-subtitle {
+      font-family: 'Inter', sans-serif;
+      font-size: clamp(9px, 2vw, 11px);
+      color: rgba(245, 158, 11, 0.5);
+      letter-spacing: 0.45em;
+      text-transform: uppercase;
+      margin-bottom: 50px;
+      z-index: 2;
+    }
+
+    #loading-bar-wrap {
+      width: min(280px, 70vw);
+      height: 1px;
+      background: rgba(245, 158, 11, 0.12);
+      position: relative;
+      overflow: hidden;
+      z-index: 2;
+    }
+    #loading-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, rgba(245,158,11,0.3), var(--amber-glow));
+      transition: width 0.2s ease-out;
+      box-shadow: 0 0 12px var(--amber-mid);
+    }
+
+    #loading-percent {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 14px;
+      color: var(--amber-strong);
+      letter-spacing: 0.2em;
+      margin-top: 18px;
+      z-index: 2;
+    }
+
+    #loading-label {
+      font-family: 'Inter', sans-serif;
+      font-size: clamp(9px, 2vw, 10px);
+      color: rgba(255, 255, 255, 0.3);
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      margin-top: 24px;
+      z-index: 2;
+      animation: pulse-text 2s ease-in-out infinite;
+    }
+    @keyframes pulse-text {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.7; }
+    }
+
+    /* ── FIXED HEADER ── */
+    #site-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      z-index: 200;
+      background: transparent;
+    }
+    #header-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 15px;
+      font-weight: 400;
+      color: var(--amber);
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+    }
+    #header-shop {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.6);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      cursor: pointer;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    #header-shop:hover { color: var(--amber); }
+
+    /* ── SCROLL PROGRESS BAR ── */
+    #scroll-progress {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 2px;
+      height: 100vh;
+      background: var(--amber-faint);
+      z-index: 100;
+    }
+    #scroll-progress-fill {
+      width: 100%;
+      height: 0%;
+      background: var(--amber-strong);
+      transition: height 0.05s linear;
+    }
+
+    /* ── HERO / VIDEO SECTION ── */
+    #hero {
+      height: 800vh;
+      position: relative;
+    }
+    #hero-sticky {
+      position: sticky;
+      top: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+    /* HERO — responsive on mobile + desktop */
+    #hero {
+      height: 300vh;
+      position: relative;
+    }
+    #hero-sticky {
+      position: sticky;
+      top: 0;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh; /* mobile-safe dynamic viewport */
+      overflow: hidden;
+    }
+    /* Canvas hidden — using native video element */
+    #video-canvas {
+      display: none;
+    }
+    /* Full-screen HD background video (paused until user taps) */
+    #source-video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 1;
+      background: #000;
+      cursor: pointer;
+    }
+
+    /* Tap overlay — BRIGHT solid play button (clearly visible on mobile) */
+    #play-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 25;
+      cursor: pointer;
+      background: rgba(0, 0, 0, 0.5);
+      transition: opacity 0.6s ease, background 0.6s ease;
+    }
+    #play-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+      background: transparent;
+    }
+    /* BRIGHT solid gold play button — impossible to miss */
+    #play-button {
+      width: clamp(100px, 22vw, 140px);
+      height: clamp(100px, 22vw, 140px);
+      border-radius: 50%;
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      border: 3px solid rgba(255, 255, 255, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow:
+        0 0 0 8px rgba(245, 158, 11, 0.25),
+        0 10px 40px rgba(0, 0, 0, 0.6),
+        0 0 80px rgba(245, 158, 11, 0.5),
+        inset 0 2px 10px rgba(255, 255, 255, 0.3);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      position: relative;
+      animation: btn-pulse 2s ease-in-out infinite;
+    }
+    @keyframes btn-pulse {
+      0%, 100% {
+        box-shadow:
+          0 0 0 8px rgba(245, 158, 11, 0.25),
+          0 10px 40px rgba(0, 0, 0, 0.6),
+          0 0 80px rgba(245, 158, 11, 0.5),
+          inset 0 2px 10px rgba(255, 255, 255, 0.3);
+      }
+      50% {
+        box-shadow:
+          0 0 0 16px rgba(245, 158, 11, 0.15),
+          0 10px 40px rgba(0, 0, 0, 0.6),
+          0 0 120px rgba(245, 158, 11, 0.7),
+          inset 0 2px 10px rgba(255, 255, 255, 0.3);
+      }
+    }
+    #play-overlay:hover #play-button,
+    #play-overlay:active #play-button {
+      transform: scale(1.1);
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    }
+    /* White play triangle (bigger, bolder) */
+    #play-button::after {
+      content: '';
+      width: 0;
+      height: 0;
+      border-left: clamp(28px, 6vw, 38px) solid #fff;
+      border-top: clamp(18px, 4vw, 24px) solid transparent;
+      border-bottom: clamp(18px, 4vw, 24px) solid transparent;
+      margin-left: clamp(8px, 1.8vw, 12px);
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+    }
+    #play-label {
+      position: absolute;
+      bottom: 18%;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: clamp(12px, 3vw, 15px);
+      font-weight: 500;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      pointer-events: none;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.9);
+      white-space: nowrap;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 8px 20px;
+      border-radius: 4px;
+      backdrop-filter: blur(4px);
+    }
+
+    /* Subtle gradient overlay on video for premium look */
+    #video-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      background: linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0.4) 0%,
+        rgba(0, 0, 0, 0.1) 40%,
+        rgba(0, 0, 0, 0.25) 70%,
+        rgba(0, 0, 0, 0.65) 100%
+      );
+      pointer-events: none;
+    }
+
+    /* Scroll-down hint at bottom (shows after user starts) */
+    #scroll-hint {
+      position: absolute;
+      bottom: 4%;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255, 255, 255, 0.8);
+      font-family: 'Inter', sans-serif;
+      font-size: clamp(9px, 2vw, 11px);
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+      pointer-events: none;
+      z-index: 15;
+      white-space: nowrap;
+      text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
+    }
+    #scroll-hint.visible { opacity: 0.9; }
+    #scroll-hint::after {
+      content: '';
+      display: block;
+      width: 1px;
+      height: 28px;
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.7), transparent);
+      margin: 10px auto 0;
+      animation: scroll-pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes scroll-pulse {
+      0%, 100% { transform: scaleY(0.3); opacity: 0.3; }
+      50% { transform: scaleY(1); opacity: 0.9; }
+    }
+
+    /* ── TEXT OVERLAYS ── */
+    .text-overlay {
+      position: absolute;
+      pointer-events: none;
+      opacity: 0;
+      text-shadow: 0 0 40px rgba(0,0,0,0.8), 0 0 80px rgba(0,0,0,0.6);
+      will-change: opacity, transform;
+    }
+
+    /* Overlay 1: ASSAM TEA title */
+    #ov-title {
+      top: 12%;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(60px, 8vw, 120px);
+      font-weight: 400;
+      color: var(--amber-glow);
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    /* Overlay 2: ancient wisdom */
+    #ov-wisdom {
+      bottom: 15%;
+      left: 8%;
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(24px, 3vw, 42px);
+      font-weight: 300;
+      color: rgba(255,255,255,0.85);
+      line-height: 1.4;
+    }
+    #ov-wisdom .word { opacity: 0; display: inline; transition: opacity 0.4s; }
+
+    /* Overlay 3: centuries of craft */
+    #ov-craft {
+      top: 20%;
+      right: 8%;
+      text-align: right;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(22px, 2.8vw, 38px);
+      font-weight: 400;
+      color: var(--amber-strong);
+      line-height: 1.4;
+      transform: translateX(60px);
+    }
+
+    /* Overlay 4: nature transform */
+    #ov-nature {
+      bottom: 8%;
+      left: 8%;
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+    }
+
+    /* Overlays 5,6,7: Pour Wait Breathe */
+    #ov-pour-wrap {
+      left: 8%;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .pwb-word {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(40px, 5vw, 64px);
+      font-weight: 400;
+      color: rgba(255,255,255,0.9);
+      opacity: 0;
+      display: block;
+    }
+
+    /* Overlay 8: three minutes */
+    #ov-minutes {
+      top: 12%;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(26px, 3.2vw, 44px);
+      font-weight: 300;
+      color: rgba(245,158,11,0.85);
+      white-space: nowrap;
+      line-height: 1.5;
+    }
+
+    /* Overlay 9: SEREN */
+    #ov-seren {
+      bottom: 12%;
+      right: 8%;
+      text-align: right;
+    }
+    #ov-seren-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(44px, 5.5vw, 72px);
+      font-weight: 400;
+      color: var(--white);
+      display: block;
+      line-height: 1;
+      letter-spacing: 0.05em;
+    }
+    #ov-seren-sub {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(14px, 1.8vw, 24px);
+      font-weight: 300;
+      color: rgba(255,255,255,0.75);
+      display: block;
+      margin-top: 8px;
+      letter-spacing: 0.1em;
+    }
+    .char { opacity: 0; display: inline; }
+
+    /* Overlay 10: Begin Ritual button */
+    #ov-ritual {
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: auto;
+    }
+    #ritual-btn {
+      display: block;
+      padding: 18px 48px;
+      background: transparent;
+      border: 1px solid var(--amber-mid);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.85);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.3s, border-color 0.3s;
+      white-space: nowrap;
+    }
+    #ritual-btn:hover {
+      background: rgba(245,158,11,0.15);
+      border-color: var(--amber);
+    }
+
+    /* ── PRODUCT CAROUSEL ── */
+    #collection {
+      background: var(--black);
+      padding: 120px 0 100px;
+    }
+    #collection-header {
+      text-align: center;
+      margin-bottom: 64px;
+      padding: 0 40px;
+    }
+    #collection-eyebrow {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--amber);
+      text-transform: uppercase;
+      letter-spacing: 0.25em;
+      margin-bottom: 16px;
+    }
+    #collection-heading {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(42px, 5vw, 64px);
+      font-weight: 400;
+      color: var(--white);
+      line-height: 1.1;
+    }
+
+    #cards-track {
+      display: flex;
+      gap: 32px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      padding: 0 calc((100vw - (380px * 3 + 32px * 2)) / 2);
+      padding-bottom: 40px;
+      scrollbar-width: none;
+    }
+    #cards-track::-webkit-scrollbar { display: none; }
+
+    .tea-card {
+      flex: 0 0 380px;
+      height: 620px;
+      scroll-snap-align: center;
+      border-radius: 2px;
+      padding: 40px 36px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), box-shadow 0.4s cubic-bezier(0.16,1,0.3,1);
+      cursor: pointer;
+    }
+
+    .card-img-wrap {
+      margin: -40px -36px 24px;
+      height: 220px;
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .card-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .card-img-fade {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 90px;
+      pointer-events: none;
+    }
+    .card-dawn .card-img-fade {
+      background: linear-gradient(to bottom, transparent, #1a0f00);
+    }
+    .card-dusk .card-img-fade {
+      background: linear-gradient(to bottom, transparent, #0a0a0a);
+    }
+    .card-night .card-img-fade {
+      background: linear-gradient(to bottom, transparent, #050510);
+    }
+    .tea-card:hover {
+      transform: translateY(-12px);
+    }
+
+    .card-dawn {
+      background: linear-gradient(160deg, #1a0f00, #2d1a00);
+      border-top: 1px solid var(--amber);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+    }
+    .card-dawn:hover {
+      box-shadow: 0 24px 60px rgba(245,158,11,0.18), 0 0 0 1px rgba(245,158,11,0.4);
+    }
+
+    .card-dusk {
+      background: linear-gradient(160deg, #0a0a0a, #1a0a00);
+      box-shadow: 0 0 0 1px rgba(245,158,11,0.3), 0 8px 40px rgba(0,0,0,0.6);
+    }
+    .card-dusk:hover {
+      box-shadow: 0 0 0 1px rgba(245,158,11,0.7), 0 24px 60px rgba(245,158,11,0.22);
+    }
+
+    .card-night {
+      background: linear-gradient(160deg, #050510, #0a0a1a);
+      border-top: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.8);
+    }
+    .card-night:hover {
+      box-shadow: 0 24px 60px rgba(100,100,200,0.12), 0 0 0 1px rgba(255,255,255,0.15);
+    }
+
+    .card-badge {
+      position: absolute;
+      top: 188px;
+      right: 36px;
+      z-index: 2;
+      font-family: 'Inter', sans-serif;
+      font-size: 9px;
+      font-weight: 500;
+      color: var(--amber);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      border: 1px solid rgba(245,158,11,0.4);
+      padding: 4px 10px;
+    }
+
+    .card-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 72px;
+      font-weight: 400;
+      line-height: 1;
+      margin-bottom: 12px;
+      letter-spacing: 0.02em;
+    }
+    .card-dawn .card-name, .card-dusk .card-name { color: var(--amber); }
+    .card-night .card-name { color: var(--white); }
+
+    .card-blend {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.45);
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      margin-bottom: 20px;
+    }
+
+    .card-divider {
+      width: 32px;
+      height: 1px;
+      background: rgba(245,158,11,0.3);
+      margin-bottom: 20px;
+    }
+
+    .card-ingredients {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.6);
+      line-height: 1.7;
+      flex: 1;
+    }
+
+    .card-price {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 32px;
+      font-weight: 400;
+      color: var(--white);
+      margin-top: 28px;
+      margin-bottom: 20px;
+    }
+
+    .card-btn {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      background: transparent;
+      border: 1px solid rgba(245,158,11,0.4);
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.7);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.3s, border-color 0.3s, color 0.3s;
+      margin-bottom: 16px;
+    }
+    .card-btn:hover {
+      background: rgba(245,158,11,0.12);
+      border-color: var(--amber);
+      color: var(--white);
+    }
+
+    .card-meta {
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.3);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    /* ── NEWSLETTER ── */
+    #newsletter {
+      position: relative;
+      padding: 120px 40px;
+      text-align: center;
+      background-image:
+        linear-gradient(to bottom,
+          rgba(3,3,3,0.88) 0%,
+          rgba(3,3,3,0.60) 35%,
+          rgba(3,3,3,0.65) 65%,
+          rgba(3,3,3,0.95) 100%
+        );
+      background-color: #0d0800;
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+
+    #newsletter-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(36px, 4.5vw, 52px);
+      font-weight: 400;
+      color: var(--white);
+      margin-bottom: 16px;
+    }
+
+    #newsletter-sub {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.35);
+      letter-spacing: 0.08em;
+      margin-bottom: 48px;
+    }
+
+    #newsletter-form {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    #email-input {
+      width: 320px;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--amber-mid);
+      padding: 12px 0;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 300;
+      color: var(--white);
+      outline: none;
+      letter-spacing: 0.05em;
+      transition: border-color 0.3s;
+    }
+    #email-input::placeholder { color: rgba(255,255,255,0.25); }
+    #email-input:focus { border-color: var(--amber); }
+
+    #newsletter-btn {
+      background: transparent;
+      border: none;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--amber);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      cursor: pointer;
+      padding-bottom: 12px;
+      position: relative;
+      transition: color 0.3s;
+    }
+    #newsletter-btn::after {
+      content: '';
+      position: absolute;
+      bottom: 10px;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: var(--amber);
+      transform: scaleX(0);
+      transition: transform 0.3s;
+    }
+    #newsletter-btn:hover::after { transform: scaleX(1); }
+
+    /* ── FOOTER ── */
+    #footer {
+      border-top: 1px solid rgba(245,158,11,0.15);
+      padding: 32px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    #footer-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-weight: 400;
+      color: var(--amber);
+      letter-spacing: 0.15em;
+    }
+
+    #footer-copy {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.25);
+      letter-spacing: 0.05em;
+    }
+
+    #footer-social {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 0.1em;
+    }
+    #footer-social span {
+      cursor: pointer;
+      transition: color 0.3s;
+    }
+    #footer-social span:hover {
+      color: var(--white);
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LOADING SCREEN -->
+  <div id="loading-screen">
+    <div id="loading-title">ASSAM TEA</div>
+    <div id="loading-subtitle">Steeped in Silence</div>
+    <div id="loading-bar-wrap">
+      <div id="loading-bar-fill"></div>
+    </div>
+    <div id="loading-percent">0%</div>
+    <div id="loading-label">Preparing your ritual</div>
+  </div>
+
+  <!-- FIXED HEADER -->
+  <header id="site-header">
+    <div id="header-logo">Assam Tea</div>
+    <a id="header-shop" href="#collection">Shop</a>
+  </header>
+
+  <!-- SCROLL PROGRESS BAR -->
+  <div id="scroll-progress">
+    <div id="scroll-progress-fill"></div>
+  </div>
+
+  <!-- HERO VIDEO SECTION -->
+  <section id="hero">
+    <div id="hero-sticky">
+      <video id="source-video" muted loop playsinline preload="auto" crossorigin="anonymous" poster="dusk-product.png">
+        <source src="tea-story-final.mp4" type="video/mp4" />
+      </video>
+      <canvas id="video-canvas"></canvas>
+
+      <!-- Premium gradient overlay -->
+      <div id="video-overlay"></div>
+
+      <!-- Tap to play overlay -->
+      <div id="play-overlay" role="button" tabindex="0" aria-label="Tap to play video">
+        <div id="play-button"></div>
+        <div id="play-label">Tap to play</div>
+      </div>
+
+      <!-- Scroll hint (shows after user starts) -->
+      <div id="scroll-hint">Scroll to explore</div>
+
+      <!-- Overlay 1: ASSAM TEA title -->
+      <div class="text-overlay" id="ov-title">ASSAM TEA</div>
+
+      <!-- Overlay 2: Ancient wisdom -->
+      <div class="text-overlay" id="ov-wisdom">
+        <span class="word">A&nbsp;</span><span class="word">single&nbsp;</span><span class="word">bag.</span><br/>
+        <span class="word">Ancient&nbsp;</span><span class="word">wisdom&nbsp;</span><span class="word">inside.</span>
+      </div>
+
+      <!-- Overlay 3: Centuries of craft -->
+      <div class="text-overlay" id="ov-craft">
+        Six ingredients.<br/>Centuries of craft.
+      </div>
+
+      <!-- Overlay 4: Nature transform -->
+      <div class="text-overlay" id="ov-nature">Watch nature transform.</div>
+
+      <!-- Overlays 5/6/7: Pour Wait Breathe -->
+      <div class="text-overlay" id="ov-pour-wrap">
+        <span class="pwb-word" id="ov-pour">Pour.</span>
+        <span class="pwb-word" id="ov-wait">Wait.</span>
+        <span class="pwb-word" id="ov-breathe">Breathe.</span>
+      </div>
+
+      <!-- Overlay 8: Three minutes -->
+      <div class="text-overlay" id="ov-minutes">
+        Three minutes.<br/>That is all it takes.
+      </div>
+
+      <!-- Overlay 9: SEREN -->
+      <div class="text-overlay" id="ov-seren">
+        <span id="ov-seren-title"></span>
+        <span id="ov-seren-sub"></span>
+      </div>
+
+      <!-- Overlay 10: Begin Ritual -->
+      <div class="text-overlay" id="ov-ritual">
+        <button id="ritual-btn" onclick="document.getElementById('collection').scrollIntoView({behavior:'smooth'})">
+          BEGIN YOUR RITUAL &rarr;
+        </button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- PRODUCT CAROUSEL -->
+  <section id="collection">
+    <div id="collection-header">
+      <div id="collection-eyebrow">The Collection</div>
+      <div id="collection-heading">Choose your ritual.</div>
+    </div>
+
+    <div id="cards-track">
+      <!-- DAWN -->
+      <div class="tea-card card-dawn">
+        <div class="card-img-wrap">
+          <img src="dawn-product.png" alt="Dawn blend" />
+          <div class="card-img-fade"></div>
+        </div>
+        <div class="card-name">DAWN</div>
+        <div class="card-blend">Morning Clarity Blend</div>
+        <div class="card-divider"></div>
+        <div class="card-ingredients">Tulsi. Rose. Cardamom. Green tea.</div>
+        <div class="card-price">&#8377; 890</div>
+        <button class="card-btn">Add to Ritual</button>
+        <div class="card-meta">15 Bags &middot; Organic &middot; Assam Origin</div>
+      </div>
+
+      <!-- DUSK -->
+      <div class="tea-card card-dusk">
+        <div class="card-img-wrap">
+          <img src="dusk-product.png" alt="Dusk blend" />
+          <div class="card-img-fade"></div>
+        </div>
+        <div class="card-badge">Bestseller</div>
+        <div class="card-name">DUSK</div>
+        <div class="card-blend">Evening Unwind Blend</div>
+        <div class="card-divider"></div>
+        <div class="card-ingredients">Chamomile. Rose. Cardamom. Black tea.</div>
+        <div class="card-price">&#8377; 950</div>
+        <button class="card-btn">Add to Ritual</button>
+        <div class="card-meta">15 Bags &middot; Organic &middot; Assam Origin</div>
+      </div>
+
+      <!-- NIGHT -->
+      <div class="tea-card card-night">
+        <div class="card-img-wrap">
+          <img src="night-product.png" alt="Night blend" />
+          <div class="card-img-fade"></div>
+        </div>
+        <div class="card-name">NIGHT</div>
+        <div class="card-blend">Deep Rest Blend</div>
+        <div class="card-divider"></div>
+        <div class="card-ingredients">Ashwagandha. Rose. Lavender. White tea.</div>
+        <div class="card-price">&#8377; 1,050</div>
+        <button class="card-btn">Add to Ritual</button>
+        <div class="card-meta">15 Bags &middot; Organic &middot; Assam Origin</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NEWSLETTER -->
+  <section id="newsletter">
+    <div id="newsletter-title">Join the ceremony.</div>
+    <div id="newsletter-sub">Be the first to know. No noise. Only ritual.</div>
+    <form id="newsletter-form" onsubmit="return false;">
+      <input id="email-input" type="email" placeholder="Your email address" autocomplete="email" />
+      <button id="newsletter-btn">Begin &rarr;</button>
+    </form>
+  </section>
+
+  <!-- FOOTER -->
+  <footer id="footer">
+    <div id="footer-logo">Assam Tea</div>
+    <div id="footer-copy">&copy; 2026 Assam Tea. Rooted in the hills.</div>
+    <div id="footer-social">
+      <span>Instagram</span> &nbsp;&middot;&nbsp; <span>YouTube</span>
+    </div>
+  </footer>
+
+  <!-- GSAP from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+  <script>
+  (function () {
+    'use strict';
+
+    /* ────────────────────────────────────────
+       SCROLL PROGRESS BAR
+    ──────────────────────────────────────── */
+    const progressFill = document.getElementById('scroll-progress-fill');
+    function updateScrollProgress() {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      progressFill.style.height = pct + '%';
+    }
+    window.addEventListener('scroll', updateScrollProgress, { passive: true });
+
+    /* ────────────────────────────────────────
+       VIP VIDEO — TAP TO START + SCROLL SCRUB
+       - Loading screen tracks video download
+       - After load: tap play button to begin
+       - After tap: video frames scrub as user scrolls
+    ──────────────────────────────────────── */
+    const video         = document.getElementById('source-video');
+    const loadingScreen = document.getElementById('loading-screen');
+    const loadingBar    = document.getElementById('loading-bar-fill');
+    const loadingPct    = document.getElementById('loading-percent');
+    const loadingLabel  = document.getElementById('loading-label');
+    const scrollHint    = document.getElementById('scroll-hint');
+    const playOverlay   = document.getElementById('play-overlay');
+
+    let loadingDone     = false;
+    let safetyTimer     = null;
+    let progressTimer   = null;
+    let userStarted     = false;
+    let isReady         = false;
+    const MIN_LOAD_TIME = 2500;
+    const loadStartTime = Date.now();
+
+    /* --- Smoothly update progress bar + percent --- */
+    function setProgress(pct) {
+      const clamped = Math.max(0, Math.min(100, pct));
+      if (loadingBar) loadingBar.style.width = clamped + '%';
+      if (loadingPct) loadingPct.textContent = Math.round(clamped) + '%';
+    }
+
+    /* --- Hide loading screen with elegant fade --- */
+    function hideLoadingScreen(reason) {
+      if (loadingDone) return;
+      loadingDone = true;
+      if (safetyTimer) clearTimeout(safetyTimer);
+      if (progressTimer) clearInterval(progressTimer);
+      console.log('Hiding loading screen:', reason);
+      setProgress(100);
+      const elapsed = Date.now() - loadStartTime;
+      const wait = Math.max(0, MIN_LOAD_TIME - elapsed);
+      setTimeout(() => {
+        loadingScreen.classList.add('fade-out');
+        setTimeout(() => { loadingScreen.style.display = 'none'; }, 1000);
+        initAnimations();
+      }, wait + 400);
+    }
+
+    /* --- Track real download progress via buffered ranges --- */
+    let displayPct = 0;
+    function trackProgress() {
+      if (loadingDone) return;
+      let realPct = 0;
+      try {
+        if (video.buffered && video.buffered.length > 0) {
+          const buffered = video.buffered.end(video.buffered.length - 1);
+          const duration = video.duration || 28.8;
+          realPct = (buffered / duration) * 100;
+        }
+      } catch (e) { /* ignore */ }
+      const creep = displayPct < 90 ? 0.5 : 0.1;
+      const target = Math.max(realPct, Math.min(displayPct + creep, 95));
+      displayPct = target;
+      setProgress(displayPct);
+    }
+    progressTimer = setInterval(trackProgress, 100);
+
+    /* --- Video fully buffered → hide loading, show play button --- */
+    video.addEventListener('canplaythrough', () => {
+      console.log('Video fully buffered — ready for tap');
+      isReady = true;
+      hideLoadingScreen('video fully loaded');
+    });
+
+    video.addEventListener('error', () => {
+      console.warn('Video failed to load — continuing without video');
+      hideLoadingScreen('video error');
+    });
+
+    video.addEventListener('loadedmetadata', () => {
+      console.log('Video metadata loaded (HD:', video.videoWidth + 'x' + video.videoHeight + ')');
+      if (loadingLabel) loadingLabel.textContent = 'Loading HD video';
+    });
+
+    /* --- User taps play → start video + enable scroll-scrub --- */
+    function onUserStart() {
+      if (userStarted) return;
+      userStarted = true;
+      playOverlay.classList.add('hidden');
+      console.log('User tapped — video starting + scroll-scrub enabled');
+      // Show scroll hint
+      if (scrollHint) {
+        scrollHint.classList.add('visible');
+        setTimeout(() => scrollHint.classList.remove('visible'), 5000);
+      }
+      // Actually PLAY the video (so user sees motion immediately)
+      video.play().then(() => {
+        console.log('Video is playing');
+      }).catch(err => console.warn('Play failed:', err.message));
+    }
+    playOverlay.addEventListener('click', onUserStart);
+    playOverlay.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onUserStart(); }
+    });
+
+    /* --- Map scroll position to video currentTime (scroll-scrub) ---
+       Only scrubs when user has scrolled past the first viewport.
+       In the first viewport, video plays normally (autoplay after tap). */
+    function updateScrollFrame() {
+      if (!userStarted || !isReady) return;
+      const heroEl = document.getElementById('hero');
+      if (!heroEl) return;
+      const heroTop = heroEl.offsetTop;
+      const heroHeight = Math.max(1, heroEl.offsetHeight - window.innerHeight);
+      const scrollY = window.scrollY - heroTop;
+      // Only scrub when user has scrolled beyond first viewport
+      if (scrollY <= 0) return;
+      const progress = Math.max(0, Math.min(1, scrollY / heroHeight));
+      if (video.duration) {
+        // Pause autoplay when scrubbing, set time based on scroll
+        if (!video.paused) video.pause();
+        video.currentTime = progress * video.duration;
+      }
+    }
+    window.addEventListener('scroll', updateScrollFrame, { passive: true });
+
+    /* --- Safety net --- */
+    safetyTimer = setTimeout(() => hideLoadingScreen('safety timeout (15s)'), 15000);
+    video.load();
+
+    /* ────────────────────────────────────────
+       GSAP SCROLL-TRIGGERED TEXT ANIMATIONS
+    ──────────────────────────────────────── */
+    function initAnimations() {
+      gsap.registerPlugin(ScrollTrigger);
+
+      const hero    = document.getElementById('hero');
+      const heroH   = hero.offsetHeight;
+      const winH    = window.innerHeight;
+      // Converts a scroll % within hero to pixels from top
+      const pct = (p) => hero.offsetTop + (heroH - winH) * p;
+
+      /* Helper: fade in + hold + fade out */
+      function fadeInOut(el, inStart, inEnd, outStart, outEnd, extraVars) {
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: 'body',
+            start: () => `${pct(inStart)}px top`,
+            end:   () => `${pct(outEnd)}px top`,
+            scrub: true,
+            invalidateOnRefresh: true,
+          }
+        });
+        const range = outEnd - inStart;
+        tl.to(el, { opacity: 1, duration: (inEnd - inStart) / range, ease: 'none', ...extraVars })
+          .to(el, { opacity: 1, duration: (outStart - inEnd) / range, ease: 'none' })
+          .to(el, { opacity: 0, duration: (outEnd - outStart) / range, ease: 'none' });
+      }
+
+      /* ── OV 1: ASSAM TEA title — 3%–5% in, hold to 13%, out 13%–17% ── */
+      fadeInOut(document.getElementById('ov-title'), 0.03, 0.07, 0.12, 0.17);
+
+      /* ── OV 2: Ancient wisdom — word by word 18%–26%, hold, out 33%–36% ── */
+      (function () {
+        const words = document.querySelectorAll('#ov-wisdom .word');
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: 'body',
+            start: () => `${pct(0.16)}px top`,
+            end:   () => `${pct(0.38)}px top`,
+            scrub: true,
+            invalidateOnRefresh: true,
+          }
+        });
+        // Container fade in
+        tl.to('#ov-wisdom', { opacity: 1, duration: 0.06 });
+        // Each word
+        words.forEach((w, i) => {
+          tl.to(w, { opacity: 1, duration: 0.05 }, 0.06 + i * 0.05);
+        });
+        // Hold
+        tl.to({}, { duration: 0.25 });
+        // Fade out
+        tl.to('#ov-wisdom', { opacity: 0, duration: 0.08 });
+      })();
+
+      /* ── OV 3: Centuries — slide in from right 30%, out by 42% ── */
+      (function () {
+        const el = document.getElementById('ov-craft');
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: 'body',
+            start: () => `${pct(0.28)}px top`,
+            end:   () => `${pct(0.44)}px top`,
+            scrub: true,
+            invalidateOnRefresh: true,
+          }
+        });
+        tl.to(el, { opacity: 1, x: 0, duration: 0.3, ease: 'none' })
+          .to(el, { opacity: 1, duration: 0.25 })
+          .to(el, { opacity: 0, duration: 0.2 });
+      })();
+
+      /* ── OV 4: Watch nature transform — 43%–48% in, out 52%–56% ── */
+      fadeInOut(document.getElementById('ov-nature'), 0.42, 0.47, 0.51, 0.56);
+
+      /* ── OV 5/6/7: Pour Wait Breathe — staggered 56%–68%, out 69%–72% ── */
+      (function () {
+        const wrap  = document.getElementById('ov-pour-wrap');
+        const pour  = document.getElementById('ov-pour');
+        const wait  = document.getElementById('ov-wait');
+        const breathe = document.getElementById('ov-breathe');
+
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: 'body',
+            start: () => `${pct(0.55)}px top`,
+            end:   () => `${pct(0.73)}px top`,
+            scrub: true,
+            invalidateOnRefresh: true,
+          }
+        });
+        tl.to(wrap,   { opacity: 1, duration: 0.01 })
+          .to(pour,   { opacity: 1, duration: 0.08 })
+          .to({}, { duration: 0.06 })
+          .to(wait,   { opacity: 1, duration: 0.08 })
+          .to({}, { duration: 0.06 })
+          .to(breathe,{ opacity: 1, duration: 0.08 })
+          .to({}, { duration: 0.18 })
+          .to(wrap,   { opacity: 0, duration: 0.1 });
+      })();
+
+      /* ── OV 8: Three minutes — 71%–76% in, hold, out 80%–84% ── */
+      fadeInOut(document.getElementById('ov-minutes'), 0.70, 0.75, 0.79, 0.84);
+
+      /* ── OV 9: SEREN — character by character 84%–91%, hold, out 93%–96% ── */
+      (function () {
+        const titleEl = document.getElementById('ov-seren-title');
+        const subEl   = document.getElementById('ov-seren-sub');
+        const wrap    = document.getElementById('ov-seren');
+
+        // Build character spans
+        const titleText = 'SEREN.';
+        const subText   = 'Steeped in silence.';
+        titleEl.innerHTML = titleText.split('').map(c =>
+          c === ' ' ? '&nbsp;' : `<span class="char">${c}</span>`
+        ).join('');
+        subEl.innerHTML = subText.split('').map(c =>
+          c === ' ' ? '&nbsp;' : `<span class="char">${c}</span>`
+        ).join('');
+
+        const allChars = wrap.querySelectorAll('.char');
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: 'body',
+            start: () => `${pct(0.83)}px top`,
+            end:   () => `${pct(0.97)}px top`,
+            scrub: true,
+            invalidateOnRefresh: true,
+          }
+        });
+        tl.to(wrap, { opacity: 1, duration: 0.02 });
+        allChars.forEach((c, i) => {
+          tl.to(c, { opacity: 1, duration: 0.03 }, 0.02 + i * 0.025);
+        });
+        tl.to({}, { duration: 0.15 })
+          .to(wrap, { opacity: 0, duration: 0.08 });
+      })();
+
+      /* ── OV 10: Begin ritual button — 94%–96% in, hold ── */
+      (function () {
+        const el = document.getElementById('ov-ritual');
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: 'body',
+            start: () => `${pct(0.93)}px top`,
+            end:   () => `${pct(1.0)}px top`,
+            scrub: true,
+            invalidateOnRefresh: true,
+          }
+        });
+        tl.to(el, { opacity: 1, duration: 0.3, ease: 'none' })
+          .to(el, { opacity: 1, duration: 0.7 });
+      })();
+
+      /* ── Collection section: cards slide in ── */
+      gsap.utils.toArray('.tea-card').forEach((card, i) => {
+        gsap.from(card, {
+          opacity: 0,
+          y: 50,
+          duration: 1,
+          delay: i * 0.15,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: card,
+            start: 'top 85%',
+            toggleActions: 'play none none none',
+          }
+        });
+      });
+
+      /* ── Newsletter title ── */
+      gsap.from('#newsletter-title', {
+        opacity: 0,
+        y: 30,
+        duration: 1.2,
+        ease: 'power3.out',
+        scrollTrigger: {
+          trigger: '#newsletter',
+          start: 'top 75%',
+          toggleActions: 'play none none none',
+        }
+      });
+    }
+
+  })();
+  </script>
+</body>
+</html>
