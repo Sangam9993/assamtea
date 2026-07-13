@@ -139,32 +139,45 @@
       height: 100vh;
       overflow: hidden;
     }
-    /* Canvas hidden — using native video now for reliability */
-    #video-canvas {
-      display: none;
+    /* HERO — responsive on mobile + desktop */
+    #hero {
+      height: 300vh;
+      position: relative;
     }
-    /* Visible background video — paused by default, plays on tap */
-    #source-video {
+    #hero-sticky {
+      position: sticky;
+      top: 0;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh; /* mobile-safe dynamic viewport */
+      overflow: hidden;
+    }
+    /* Canvas: scroll-scrub video frames (HD) */
+    #video-canvas {
       position: absolute;
       inset: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
       z-index: 1;
-      cursor: pointer;
+    }
+    /* Hidden video element (frames drawn to canvas) */
+    #source-video {
+      display: none;
+      position: absolute;
     }
 
-    /* Play button overlay (shown when video is paused) */
+    /* Play button overlay (shown until user taps) */
     #play-overlay {
       position: absolute;
       inset: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 10;
+      z-index: 20;
       cursor: pointer;
-      background: rgba(0, 0, 0, 0.35);
-      transition: opacity 0.3s ease, background 0.3s ease;
+      background: rgba(0, 0, 0, 0.45);
+      transition: opacity 0.4s ease, background 0.4s ease;
     }
     #play-overlay.hidden {
       opacity: 0;
@@ -172,14 +185,14 @@
       background: transparent;
     }
     #play-button {
-      width: 96px;
-      height: 96px;
+      width: clamp(72px, 18vw, 110px);  /* responsive: 72-110px */
+      height: clamp(72px, 18vw, 110px);
       border-radius: 50%;
-      background: rgba(245, 158, 11, 0.92);
+      background: rgba(245, 158, 11, 0.95);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
       transition: transform 0.2s ease, background 0.2s ease;
     }
     #play-overlay:hover #play-button,
@@ -191,23 +204,54 @@
       content: '';
       width: 0;
       height: 0;
-      border-left: 26px solid #fff;
-      border-top: 16px solid transparent;
-      border-bottom: 16px solid transparent;
-      margin-left: 6px;
+      border-left: clamp(20px, 5vw, 30px) solid #fff;
+      border-top: clamp(12px, 3vw, 18px) solid transparent;
+      border-bottom: clamp(12px, 3vw, 18px) solid transparent;
+      margin-left: clamp(5px, 1.2vw, 8px);
     }
     #play-label {
       position: absolute;
-      bottom: 18%;
+      bottom: 14%;
       left: 50%;
       transform: translateX(-50%);
       color: #fff;
       font-family: 'Inter', sans-serif;
-      font-size: 13px;
+      font-size: clamp(11px, 2.5vw, 14px);
       letter-spacing: 0.25em;
       text-transform: uppercase;
-      opacity: 0.85;
+      opacity: 0.9;
       pointer-events: none;
+      white-space: nowrap;
+    }
+    #scroll-hint {
+      position: absolute;
+      bottom: 5%;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255, 255, 255, 0.7);
+      font-family: 'Inter', sans-serif;
+      font-size: clamp(10px, 2vw, 12px);
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      pointer-events: none;
+      z-index: 15;
+      white-space: nowrap;
+    }
+    #scroll-hint.visible { opacity: 0.8; }
+    #scroll-hint::after {
+      content: '';
+      display: block;
+      width: 1px;
+      height: 30px;
+      background: rgba(255, 255, 255, 0.5);
+      margin: 10px auto 0;
+      animation: scroll-pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes scroll-pulse {
+      0%, 100% { transform: scaleY(0.3); opacity: 0.3; }
+      50% { transform: scaleY(1); opacity: 0.9; }
     }
 
     /* ── TEXT OVERLAYS ── */
@@ -719,16 +763,17 @@
   <!-- HERO VIDEO SECTION -->
   <section id="hero">
     <div id="hero-sticky">
-      <canvas id="video-canvas"></canvas>
-      <video id="source-video" muted loop playsinline preload="metadata" crossorigin="anonymous" poster="dusk-product.png">
+      <video id="source-video" muted playsinline preload="auto" crossorigin="anonymous">
         <source src="tea-story-final.mp4" type="video/mp4" />
       </video>
+      <canvas id="video-canvas"></canvas>
 
       <!-- Tap to play overlay -->
       <div id="play-overlay" role="button" tabindex="0" aria-label="Play video">
         <div id="play-button"></div>
         <div id="play-label">Tap to play</div>
       </div>
+      <div id="scroll-hint">Scroll to explore</div>
 
       <!-- Overlay 1: ASSAM TEA title -->
       <div class="text-overlay" id="ov-title">ASSAM TEA</div>
@@ -874,11 +919,34 @@
        VIDEO — TAP TO PLAY (no autoplay)
     ──────────────────────────────────────── */
     const video         = document.getElementById('source-video');
+    const canvas        = document.getElementById('video-canvas');
+    const ctx           = canvas.getContext('2d');
     const loadingScreen = document.getElementById('loading-screen');
     const playOverlay   = document.getElementById('play-overlay');
+    const scrollHint    = document.getElementById('scroll-hint');
 
-    let loadingDone = false;
-    let safetyTimer = null;
+    let frames          = [];
+    let totalFrames     = 0;
+    let framesLoaded    = 0;
+    let rafId           = null;
+    let currentFrame    = 0;
+    let targetFrame     = 0;
+    let isReady         = false;
+    let userStarted     = false;   // true after user taps play
+    let loadingDone     = false;
+    let safetyTimer     = null;
+
+    /* --- Responsive canvas sizing --- */
+    function resizeCanvas() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2); // cap at 2x for perf
+      canvas.width  = Math.floor(window.innerWidth * dpr);
+      canvas.height = Math.floor(window.innerHeight * dpr);
+      if (isReady && frames[currentFrame]) {
+        ctx.drawImage(frames[currentFrame], 0, 0, canvas.width, canvas.height);
+      }
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
 
     function hideLoadingScreen(reason) {
       if (loadingDone) return;
@@ -890,53 +958,110 @@
       initAnimations();
     }
 
-    // Hide loading screen as soon as video metadata is ready (poster visible)
-    video.addEventListener('loadedmetadata', () => {
-      console.log('Video metadata loaded — ready for tap');
-      hideLoadingScreen('metadata loaded');
+    /* --- Capture a single frame from the video --- */
+    function captureFrame(time) {
+      return new Promise((resolve) => {
+        const oc = document.createElement('canvas');
+        oc.width  = video.videoWidth  || 1280;
+        oc.height = video.videoHeight || 720;
+        const octx = oc.getContext('2d');
+        const onSeeked = () => {
+          video.removeEventListener('seeked', onSeeked);
+          octx.drawImage(video, 0, 0, oc.width, oc.height);
+          resolve(oc);
+        };
+        video.addEventListener('seeked', onSeeked);
+        video.currentTime = time;
+      });
+    }
+
+    /* --- Extract frames once metadata is loaded (HD, 15fps, capped at 90) --- */
+    async function extractFrames() {
+      const duration = video.duration;
+      const fps = 15;
+      const rawCount = Math.floor(duration * fps);
+      totalFrames = Math.min(rawCount, 90);
+      frames = new Array(totalFrames);
+      console.log('Extracting', totalFrames, 'HD frames...');
+      for (let i = 0; i < totalFrames; i++) {
+        const t = (i / (totalFrames - 1)) * duration;
+        frames[i] = await captureFrame(t);
+        framesLoaded++;
+      }
+      isReady = true;
+      console.log('HD frames ready:', totalFrames);
+      // Draw first frame so user sees HD poster
+      ctx.drawImage(frames[0], 0, 0, canvas.width, canvas.height);
+      startRenderLoop();
+      hideLoadingScreen('frames ready');
+    }
+
+    function startRenderLoop() {
+      function loop() {
+        rafId = requestAnimationFrame(loop);
+        if (!isReady) return;
+        if (currentFrame !== targetFrame) {
+          currentFrame += (targetFrame - currentFrame) * 0.18;
+          if (Math.abs(targetFrame - currentFrame) < 0.5) currentFrame = targetFrame;
+          currentFrame = Math.round(currentFrame);
+        }
+        const idx = Math.max(0, Math.min(totalFrames - 1, currentFrame));
+        if (frames[idx]) ctx.drawImage(frames[idx], 0, 0, canvas.width, canvas.height);
+      }
+      loop();
+    }
+
+    /* --- Map scroll position to frame index (only after user starts) --- */
+    function updateFrame() {
+      if (!userStarted || !isReady) return;
+      const heroEl = document.getElementById('hero');
+      const heroTop = heroEl.offsetTop;
+      const heroHeight = heroEl.offsetHeight - window.innerHeight;
+      const scrollY = window.scrollY - heroTop;
+      const progress = Math.max(0, Math.min(1, scrollY / heroHeight));
+      targetFrame = Math.round(progress * (totalFrames - 1));
+    }
+    window.addEventListener('scroll', updateFrame, { passive: true });
+
+    /* --- User taps play → extract frames + start scroll-scrub --- */
+    function onUserStart() {
+      if (userStarted) return;
+      userStarted = true;
+      playOverlay.classList.add('hidden');
+      scrollHint.classList.add('visible');
+      // Hide hint after 3 seconds
+      setTimeout(() => scrollHint.classList.remove('visible'), 3000);
+      console.log('User started — extracting frames');
+      // If frames already ready, jump straight to scroll-scrub
+      if (isReady) {
+        updateFrame();
+      } else {
+        extractFrames().catch(err => {
+          console.error('Frame extraction failed:', err);
+          hideLoadingScreen('extraction error');
+        });
+      }
+    }
+    playOverlay.addEventListener('click', onUserStart);
+    playOverlay.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onUserStart(); }
     });
 
+    /* --- Load video metadata --- */
+    video.addEventListener('loadedmetadata', () => {
+      console.log('Video metadata loaded (HD:', video.videoWidth + 'x' + video.videoHeight + ')');
+      hideLoadingScreen('metadata loaded');
+      // Pre-extract first frame for HD poster before tap
+      if (!userStarted) {
+        extractFrames().catch(err => console.warn('Pre-extract failed:', err));
+      }
+    });
     video.addEventListener('error', () => {
       console.warn('Video failed to load — continuing without video');
       hideLoadingScreen('video error');
     });
 
-    // Tap/click to play or pause
-    function togglePlay() {
-      if (video.paused) {
-        video.play().then(() => {
-          console.log('Video started playing');
-          playOverlay.classList.add('hidden');
-        }).catch(err => console.warn('Play failed:', err.message));
-      } else {
-        video.pause();
-        console.log('Video paused');
-        playOverlay.classList.remove('hidden');
-      }
-    }
-
-    playOverlay.addEventListener('click', togglePlay);
-    playOverlay.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        togglePlay();
-      }
-    });
-    // Also allow tapping the video itself to toggle
-    video.addEventListener('click', togglePlay);
-
-    // Show overlay again if video ends or is paused by browser
-    video.addEventListener('pause', () => {
-      playOverlay.classList.remove('hidden');
-    });
-    video.addEventListener('play', () => {
-      playOverlay.classList.add('hidden');
-    });
-
-    // Safety: hide loading screen after 4s no matter what
-    safetyTimer = setTimeout(() => hideLoadingScreen('safety timeout (4s)'), 4000);
-
-    // Start loading metadata (not full video — saves bandwidth)
+    safetyTimer = setTimeout(() => hideLoadingScreen('safety timeout (5s)'), 5000);
     video.load();
 
     /* ────────────────────────────────────────
