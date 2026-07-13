@@ -143,7 +143,7 @@
     #video-canvas {
       display: none;
     }
-    /* Visible autoplay background video */
+    /* Visible background video — paused by default, plays on tap */
     #source-video {
       position: absolute;
       inset: 0;
@@ -151,6 +151,63 @@
       height: 100%;
       object-fit: cover;
       z-index: 1;
+      cursor: pointer;
+    }
+
+    /* Play button overlay (shown when video is paused) */
+    #play-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      cursor: pointer;
+      background: rgba(0, 0, 0, 0.35);
+      transition: opacity 0.3s ease, background 0.3s ease;
+    }
+    #play-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+      background: transparent;
+    }
+    #play-button {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      background: rgba(245, 158, 11, 0.92);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+    #play-overlay:hover #play-button,
+    #play-overlay:active #play-button {
+      transform: scale(1.08);
+      background: rgba(245, 158, 11, 1);
+    }
+    #play-button::after {
+      content: '';
+      width: 0;
+      height: 0;
+      border-left: 26px solid #fff;
+      border-top: 16px solid transparent;
+      border-bottom: 16px solid transparent;
+      margin-left: 6px;
+    }
+    #play-label {
+      position: absolute;
+      bottom: 18%;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      opacity: 0.85;
+      pointer-events: none;
     }
 
     /* ── TEXT OVERLAYS ── */
@@ -663,9 +720,15 @@
   <section id="hero">
     <div id="hero-sticky">
       <canvas id="video-canvas"></canvas>
-      <video id="source-video" autoplay muted loop playsinline preload="auto" crossorigin="anonymous">
+      <video id="source-video" muted loop playsinline preload="metadata" crossorigin="anonymous" poster="dusk-product.png">
         <source src="tea-story-final.mp4" type="video/mp4" />
       </video>
+
+      <!-- Tap to play overlay -->
+      <div id="play-overlay" role="button" tabindex="0" aria-label="Play video">
+        <div id="play-button"></div>
+        <div id="play-label">Tap to play</div>
+      </div>
 
       <!-- Overlay 1: ASSAM TEA title -->
       <div class="text-overlay" id="ov-title">ASSAM TEA</div>
@@ -808,10 +871,11 @@
     window.addEventListener('scroll', updateScrollProgress, { passive: true });
 
     /* ────────────────────────────────────────
-       VIDEO AUTOPLAY (simple, reliable)
+       VIDEO — TAP TO PLAY (no autoplay)
     ──────────────────────────────────────── */
-    const video        = document.getElementById('source-video');
+    const video         = document.getElementById('source-video');
     const loadingScreen = document.getElementById('loading-screen');
+    const playOverlay   = document.getElementById('play-overlay');
 
     let loadingDone = false;
     let safetyTimer = null;
@@ -821,27 +885,15 @@
       loadingDone = true;
       if (safetyTimer) clearTimeout(safetyTimer);
       console.log('Hiding loading screen:', reason);
-      // Fade out loading screen
       loadingScreen.classList.add('fade-out');
       setTimeout(() => { loadingScreen.style.display = 'none'; }, 850);
-      // Init GSAP animations
       initAnimations();
     }
 
-    // Safety: hide loading screen after 4s no matter what
-    safetyTimer = setTimeout(() => hideLoadingScreen('safety timeout (4s)'), 4000);
-
-    // Hide loading screen as soon as video can play
-    video.addEventListener('canplay', () => {
-      console.log('Video can play — starting autoplay');
-      hideLoadingScreen('video can play');
-      // Try to play (in case autoplay was blocked)
-      video.play().catch(err => console.warn('Autoplay blocked:', err.message));
-    });
-
-    video.addEventListener('playing', () => {
-      console.log('Video is playing');
-      hideLoadingScreen('video playing');
+    // Hide loading screen as soon as video metadata is ready (poster visible)
+    video.addEventListener('loadedmetadata', () => {
+      console.log('Video metadata loaded — ready for tap');
+      hideLoadingScreen('metadata loaded');
     });
 
     video.addEventListener('error', () => {
@@ -849,7 +901,42 @@
       hideLoadingScreen('video error');
     });
 
-    // Trigger load
+    // Tap/click to play or pause
+    function togglePlay() {
+      if (video.paused) {
+        video.play().then(() => {
+          console.log('Video started playing');
+          playOverlay.classList.add('hidden');
+        }).catch(err => console.warn('Play failed:', err.message));
+      } else {
+        video.pause();
+        console.log('Video paused');
+        playOverlay.classList.remove('hidden');
+      }
+    }
+
+    playOverlay.addEventListener('click', togglePlay);
+    playOverlay.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        togglePlay();
+      }
+    });
+    // Also allow tapping the video itself to toggle
+    video.addEventListener('click', togglePlay);
+
+    // Show overlay again if video ends or is paused by browser
+    video.addEventListener('pause', () => {
+      playOverlay.classList.remove('hidden');
+    });
+    video.addEventListener('play', () => {
+      playOverlay.classList.add('hidden');
+    });
+
+    // Safety: hide loading screen after 4s no matter what
+    safetyTimer = setTimeout(() => hideLoadingScreen('safety timeout (4s)'), 4000);
+
+    // Start loading metadata (not full video — saves bandwidth)
     video.load();
 
     /* ────────────────────────────────────────
