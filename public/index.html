@@ -990,26 +990,15 @@
     /* --- Also update on standard progress events --- */
     video.addEventListener('progress', trackProgress);
 
-    /* --- Video can start playing → hide loading + autoplay --- */
+    /* --- Video fully buffered → hide loading + autoplay --- */
     video.addEventListener('canplaythrough', () => {
-      console.log('Video can play through — starting autoplay');
-      hideLoadingScreen('video ready');
-      video.play().catch(err => console.warn('Autoplay blocked:', err.message));
-    });
-
-    /* --- Fallback: if canplaythrough takes too long, use canplay --- */
-    let canPlayFired = false;
-    video.addEventListener('canplay', () => {
-      if (canPlayFired || loadingDone) return;
-      canPlayFired = true;
-      console.log('Video can play — starting autoplay (fallback)');
-      hideLoadingScreen('can play');
+      console.log('Video fully buffered — starting autoplay');
+      hideLoadingScreen('video fully loaded');
       video.play().catch(err => console.warn('Autoplay blocked:', err.message));
     });
 
     video.addEventListener('playing', () => {
       console.log('Video is playing');
-      if (!loadingDone) hideLoadingScreen('playing');
     });
 
     video.addEventListener('error', () => {
